@@ -42,7 +42,7 @@ def update_github_file():
     commit_message = data.get("commit_message", "Update file via Willow")
 
     github_token = os.getenv("GITHUB_TOKEN")
-    repo = "bazinet/willow-task-bot"
+    repo = "jpbazinet/willow-task-bot"
     branch = "main"
 
     headers = {
