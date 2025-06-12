@@ -2,7 +2,9 @@ from flask import Flask, request, jsonify
 import os
 import requests
 import base64
+from datetime import datetime
 from dotenv import load_dotenv
+from dateparser.search import search_dates
 
 load_dotenv()
 app = Flask(__name__)
@@ -86,9 +88,6 @@ def send_sms():
     )
     return {"sid": msg.sid}, 200
 
-from dateparser.search import search_dates
-from datetime import datetime
-
 @app.route('/parse-task', methods=['POST'])
 def parse_task():
     try:
@@ -97,14 +96,16 @@ def parse_task():
         if not raw_input:
             return {"error": "No input provided"}, 400
 
-        # Existing parsing logic...
         parsed_date = search_dates(raw_input)
         due = None
         content = raw_input
+
         if parsed_date:
-            match_text, date_obj = parsed_date[-1]
-            due = date_obj.strftime("%A at %-I%p").lower()
-            content = raw_input.replace(match_text, "").strip()
+            for match_text, date_obj in parsed_date:
+                if date_obj and match_text.lower() in raw_input.lower():
+                    due = date_obj.strftime("%A at %-I%p").lower()
+                    content = raw_input.replace(match_text, "").strip()
+                    break
 
         payload = {
             "content": content,
@@ -116,7 +117,6 @@ def parse_task():
         return jsonify(resp.json()), resp.status_code
 
     except Exception as e:
-        # Log and return the stack trace
         import traceback
         traceback_str = traceback.format_exc()
         print(traceback_str)
