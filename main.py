@@ -86,5 +86,38 @@ def send_sms():
     )
     return {"sid": msg.sid}, 200
 
+import dateparser
+from datetime import datetime
+
+@app.route('/parse-task', methods=['POST'])
+def parse_task():
+    data = request.json
+    raw_input = data.get("text")
+    priority = data.get("priority", 1)
+
+    if not raw_input:
+        return {"error": "No input provided"}, 400
+
+    # Try to parse the date
+    parsed_date = dateparser.search.search_dates(raw_input)
+    due = None
+    content = raw_input
+
+    if parsed_date:
+        # Extract date text and datetime object
+        match_text, date_obj = parsed_date[-1]
+        due = date_obj.strftime("%A at %-I%p").lower() if date_obj else None
+        content = raw_input.replace(match_text, "").strip()
+
+    payload = {
+        "content": content,
+        "due": due or "today",
+        "priority": priority
+    }
+
+    # Send to existing /add-task
+    resp = requests.post("https://willow-task-bot.onrender.com/add-task", json=payload)
+    return jsonify(resp.json()), resp.status_code
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
