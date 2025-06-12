@@ -43,9 +43,9 @@ tasks_data = get_tasks()
 # Format SMS content
 if tasks_data:
     task_list = "\n".join([f"- {task['content']}" for task in tasks_data])
-    message_body = f"{intro}\n📝 Willow here:\n{task_list}\n\n💬 {quote}"
+message_body = f"Hey superstar 🌟 Willow here:\n{task_list}\n\n💬 {quote}"
 else:
-    message_body = f"{intro}\n🎉 No tasks today! Recharge & shine bright.\n💬 {quote}"
+message_body = f"Hey superstar 🌟 Willow here:\n{task_list}\n\n💬 {quote}"
 
 # Send SMS
 message = client.messages.create(
