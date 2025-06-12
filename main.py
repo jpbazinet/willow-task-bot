@@ -122,5 +122,12 @@ def parse_task():
         print(traceback_str)
         return {"error": "Internal server error", "details": traceback_str}, 500
 
+@app.route('/todoist-webhook', methods=['POST'])
+def todoist_webhook():
+    data = request.get_json()
+    print("Webhook received:", data)
+    return '', 204
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
