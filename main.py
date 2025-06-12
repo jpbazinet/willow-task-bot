@@ -86,7 +86,7 @@ def send_sms():
     )
     return {"sid": msg.sid}, 200
 
-import dateparser
+from dateparser.search import search_dates
 from datetime import datetime
 
 @app.route('/parse-task', methods=['POST'])
@@ -98,7 +98,7 @@ def parse_task():
             return {"error": "No input provided"}, 400
 
         # Existing parsing logic...
-        parsed_date = dateparser.search.search_dates(raw_input)
+        parsed_date = search_dates(raw_input)
         due = None
         content = raw_input
         if parsed_date:
