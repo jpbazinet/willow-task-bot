@@ -91,33 +91,36 @@ from datetime import datetime
 
 @app.route('/parse-task', methods=['POST'])
 def parse_task():
-    data = request.json
-    raw_input = data.get("text")
-    priority = data.get("priority", 1)
+    try:
+        data = request.json
+        raw_input = data.get("text")
+        if not raw_input:
+            return {"error": "No input provided"}, 400
 
-    if not raw_input:
-        return {"error": "No input provided"}, 400
+        # Existing parsing logic...
+        parsed_date = dateparser.search.search_dates(raw_input)
+        due = None
+        content = raw_input
+        if parsed_date:
+            match_text, date_obj = parsed_date[-1]
+            due = date_obj.strftime("%A at %-I%p").lower()
+            content = raw_input.replace(match_text, "").strip()
 
-    # Try to parse the date
-    parsed_date = dateparser.search.search_dates(raw_input)
-    due = None
-    content = raw_input
+        payload = {
+            "content": content,
+            "due": due or "today",
+            "priority": data.get("priority", 1)
+        }
 
-    if parsed_date:
-        # Extract date text and datetime object
-        match_text, date_obj = parsed_date[-1]
-        due = date_obj.strftime("%A at %-I%p").lower() if date_obj else None
-        content = raw_input.replace(match_text, "").strip()
+        resp = requests.post("https://willow-task-bot.onrender.com/add-task", json=payload)
+        return jsonify(resp.json()), resp.status_code
 
-    payload = {
-        "content": content,
-        "due": due or "today",
-        "priority": priority
-    }
-
-    # Send to existing /add-task
-    resp = requests.post("https://willow-task-bot.onrender.com/add-task", json=payload)
-    return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        # Log and return the stack trace
+        import traceback
+        traceback_str = traceback.format_exc()
+        print(traceback_str)
+        return {"error": "Internal server error", "details": traceback_str}, 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
