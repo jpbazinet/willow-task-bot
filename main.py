@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
 import os
 import requests
+import base64
 from dotenv import load_dotenv
 
 load_dotenv()
-
 app = Flask(__name__)
 
 @app.route('/add-task', methods=['POST'])
@@ -31,9 +31,6 @@ def add_task():
     resp = requests.post("https://api.todoist.com/rest/v2/tasks", headers=headers, json=task_data)
     return jsonify(resp.json()), resp.status_code
 
-
-import base64
-
 @app.route('/update-github-file', methods=['POST'])
 def update_github_file():
     data = request.json
@@ -50,7 +47,6 @@ def update_github_file():
         "Accept": "application/vnd.github+json"
     }
 
-    # Step 1: Get the file SHA
     get_url = f"https://api.github.com/repos/{repo}/contents/{filename}"
     get_params = {"ref": branch}
     get_resp = requests.get(get_url, headers=headers, params=get_params)
@@ -59,8 +55,6 @@ def update_github_file():
         return {"error": f"Could not retrieve file: {get_resp.text}"}, 400
 
     sha = get_resp.json().get("sha")
-
-    # Step 2: Update file content
     content_encoded = base64.b64encode(new_content.encode("utf-8")).decode("utf-8")
     update_data = {
         "message": commit_message,
@@ -78,6 +72,19 @@ def update_github_file():
         return {"error": f"Failed to update file: {update_resp.text}"}, 400
 
     return {"message": "File updated successfully", "commit": update_resp.json().get("commit")}, 200
+
+@app.route('/send-sms', methods=['POST'])
+def send_sms():
+    data = request.json
+    body = data.get("body", "🌟 Hey superstar! Willow here – everything's running smoothly.")
+    from twilio.rest import Client
+    client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+    msg = client.messages.create(
+        body=body,
+        from_=os.getenv("TWILIO_PHONE_NUMBER"),
+        to=os.getenv("TWILIO_RECIPIENT_NUMBER")
+    )
+    return {"sid": msg.sid}, 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)
